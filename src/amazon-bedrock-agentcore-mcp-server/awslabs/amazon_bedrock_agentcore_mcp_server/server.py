@@ -16,7 +16,7 @@
 
 import asyncio
 import os
-from .tools import docs, gateway
+from .tools import docs
 from .utils import cache
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -33,8 +33,8 @@ AGENTCORE_MCP_INSTRUCTIONS = (
     '## Code Interpreter Tools\n'
     'Use start_code_interpreter_session to create a sandbox, then execute_code, '
     'execute_command, or install_packages to run code. Use upload_file and '
-    'download_file to transfer data. Stop sessions when done to release '
-    'resources.\n\n'
+    'download_file to transfer data. Use list_files to see files in the sandbox. '
+    'Stop sessions when done to release resources.\n\n'
     '## Browser Tools\n'
     'Start a browser session with start_browser_session, then use browser '
     'interaction tools (browser_navigate, browser_snapshot, browser_click, '
@@ -169,8 +169,47 @@ if _is_service_enabled('memory'):
             f'Set AGENTCORE_DISABLE_TOOLS=memory to suppress.'
         )
 
-if _is_service_enabled('gateway'):
-    mcp.tool()(gateway.manage_agentcore_gateway)
+if _is_service_enabled('identity'):  # pragma: no cover
+    try:
+        from .tools.identity import register_identity_tools  # type: ignore
+
+        register_identity_tools(mcp)
+        logger.info('Identity tools registered (21 tools)')
+    except ImportError as e:
+        logger.error(f'Identity tools disabled — failed to import: {e}.')
+    except Exception as e:
+        logger.error(
+            f'Identity tools disabled — initialization failed: {e}. '
+            f'Set AGENTCORE_DISABLE_TOOLS=identity to suppress.'
+        )
+
+if _is_service_enabled('gateway'):  # pragma: no cover
+    try:
+        from .tools.gateway import register_gateway_tools  # type: ignore
+
+        register_gateway_tools(mcp)
+        logger.info('Gateway tools registered (15 tools)')
+    except ImportError as e:
+        logger.error(f'Gateway tools disabled — failed to import: {e}.')
+    except Exception as e:
+        logger.error(
+            f'Gateway tools disabled — initialization failed: {e}. '
+            f'Set AGENTCORE_DISABLE_TOOLS=gateway to suppress.'
+        )
+
+if _is_service_enabled('policy'):  # pragma: no cover
+    try:
+        from .tools.policy import register_policy_tools  # type: ignore
+
+        register_policy_tools(mcp)
+        logger.info('Policy tools registered (15 tools)')
+    except ImportError as e:
+        logger.error(f'Policy tools disabled — failed to import: {e}.')
+    except Exception as e:
+        logger.error(
+            f'Policy tools disabled — initialization failed: {e}. '
+            f'Set AGENTCORE_DISABLE_TOOLS=policy to suppress.'
+        )
 
 if _is_service_enabled('browser'):
     try:
@@ -198,7 +237,7 @@ if _is_service_enabled('code_interpreter'):
 
         register_code_interpreter_tools(mcp)
         _code_interpreter_cleanup = cleanup_code_interpreter
-        logger.info('Code interpreter tools registered (9 tools)')
+        logger.info('Code interpreter tools registered (10 tools)')
     except ImportError as e:
         logger.error(
             f'Code interpreter tools disabled — failed to import '
